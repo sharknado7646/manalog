@@ -56,26 +56,43 @@ const BookForm=({initial,onSave,onCancel,title:ft,allShelves,platforms,genres,fo
   const useFmts=fmts||FORMATS;const usePubs=pubs||PUBLISH_TYPES;
   const empty={title:"",authors:[],genre:[],format:"전자책",platform:platforms[0]||"",publishType:"단행본",volumes:"",readVolumes:"",completed:false,rating:0,year:"",status:"읽을 예정",memo:"",shelves:[],cover:"",readDate:"",wishlist:false};
   const [d,setD]=useState(initial?{...initial,authors:initial.authors||[initial.author].filter(Boolean),volumes:initial.volumes??"",readVolumes:initial.readVolumes??"",year:initial.year??"",readDate:initial.readDate||"",publishType:initial.publishType||"단행본"}:empty);
+  const [tab,setTab]=useState("basic");
   const ts=n=>setD({...d,shelves:d.shelves.includes(n)?d.shelves.filter(x=>x!==n):[...d.shelves,n]});
   const nc=(k,v)=>{if(v==="")return setD({...d,[k]:""});setD({...d,[k]:Math.max(0,parseInt(v)||0)});};
   const ds=()=>onSave({...d,volumes:d.volumes===""?null:Number(d.volumes),readVolumes:d.readVolumes===""?null:Number(d.readVolumes),year:d.year===""?null:Number(d.year)});
-  return<div style={{display:"flex",flexDirection:"column",gap:14,maxHeight:"70vh",overflowY:"auto",overflowX:"hidden",paddingRight:4}}>
-    <h3 style={{fontSize:17,fontWeight:800,color:"var(--text-primary)",margin:0}}>{ft}</h3>
-    <FL label="제목 *"><SI value={d.title} onChange={e=>setD({...d,title:e.target.value})} placeholder="작품 제목"/></FL>
-    <AuthorTags authors={d.authors} onChange={a=>setD({...d,authors:a})}/>
-    <div style={{display:"flex",gap:10}}><FL label="출판연도"><SI type="number" min="0" value={d.year} onChange={e=>nc("year",e.target.value)} placeholder="선택"/></FL><FL label="전체 권수"><SI type="number" min="0" value={d.volumes} onChange={e=>nc("volumes",e.target.value)} placeholder="선택"/></FL><FL label="읽은 권수"><SI type="number" min="0" value={d.readVolumes} onChange={e=>nc("readVolumes",e.target.value)} placeholder="선택"/></FL></div>
-    <FL label="장르"><div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>{d.genre.map(g=><Bdg key={g} color="var(--accent)" bg="var(--accent-bg)">{g}<X size={11} style={{cursor:"pointer",marginLeft:2}} onClick={()=>setD({...d,genre:d.genre.filter(x=>x!==g)})}/></Bdg>)}</div><SS value="" onChange={e=>{const v=e.target.value;if(v&&!d.genre.includes(v))setD({...d,genre:[...d.genre,v]});e.target.value="";}}><option value="">장르 선택...</option>{genres.filter(g=>!d.genre.includes(g)).map(g=><option key={g} value={g}>{g}</option>)}</SS></FL>
-    <div style={{display:"flex",gap:10}}><FL label="매체"><SS value={d.format} onChange={e=>setD({...d,format:e.target.value})}>{useFmts.map(o=><option key={o} value={o}>{o}</option>)}</SS></FL><FL label="발행"><SS value={d.publishType} onChange={e=>setD({...d,publishType:e.target.value})}>{usePubs.map(o=><option key={o} value={o}>{o}</option>)}</SS></FL></div>
-    <FL label="플랫폼"><SS value={d.platform} onChange={e=>setD({...d,platform:e.target.value})}>{platforms.map(o=><option key={o} value={o}>{o}</option>)}</SS></FL>
-    <FL label="독서 상태"><SS value={d.status} onChange={e=>setD({...d,status:e.target.value})}>{STATUSES.map(o=><option key={o} value={o}>{o}</option>)}</SS></FL>
-    <FL label="완결 여부"><div style={{display:"flex",gap:8}}><TB label="연재중" active={!d.completed} onClick={()=>setD({...d,completed:false})}/><TB label="완결" active={d.completed} onClick={()=>setD({...d,completed:true})}/></div></FL>
-    <FL label="별점"><Stars rating={d.rating} size={28} interactive onChange={r=>setD({...d,rating:r})}/></FL>
-    <FL label="읽은 날짜"><SI type="date" value={d.readDate} onChange={e=>setD({...d,readDate:e.target.value})}/></FL>
-    {allShelves.length>0&&<FL label="서재"><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{allShelves.map(sh=><TB key={sh.id} label={sh.name} active={d.shelves.includes(sh.name)} onClick={()=>ts(sh.name)} style={{flex:"none",padding:"8px 14px"}}/>)}</div></FL>}
-    <FL label="위시리스트"><div style={{display:"flex",gap:8}}><TB label="아니오" active={!d.wishlist} onClick={()=>setD({...d,wishlist:false})}/><TB label="예" active={d.wishlist} onClick={()=>setD({...d,wishlist:true})}/></div></FL>
-    <CoverEditor value={d.cover} onChange={v=>setD({...d,cover:v})}/>
-    <FL label={`메모 (${(d.memo||"").length}/${MEMO_MAX})`}><ST value={d.memo} maxLength={MEMO_MAX} onChange={e=>setD({...d,memo:e.target.value})} rows={2} placeholder="짧은 메모 (선택)"/></FL>
-    <div style={{display:"flex",gap:8,marginTop:4,position:"sticky",bottom:0,background:"var(--surface)",paddingTop:8}}><Btn onClick={onCancel} style={{flex:1}}>취소</Btn><Btn primary onClick={ds} style={{flex:1}}><Check size={16}/>저장</Btn></div>
+  const tabStyle=(t)=>({flex:1,padding:"10px",borderRadius:12,border:"none",background:tab===t?"var(--accent)":"var(--bg)",color:tab===t?"#fff":"var(--text-tertiary)",fontSize:13,fontWeight:700,cursor:"pointer",transition:"all .15s"});
+  const optLabel=(text)=><label style={{fontSize:11,color:"var(--text-tertiary)",display:"block",marginBottom:4,fontWeight:500}}>{text}</label>;
+  const reqLabel=(text)=><label style={{fontSize:11,color:"var(--accent)",display:"block",marginBottom:4,fontWeight:700}}>{text} *</label>;
+  return<div style={{display:"flex",flexDirection:"column",gap:0}}>
+    <h3 style={{fontSize:17,fontWeight:800,color:"var(--text-primary)",margin:"0 0 12px"}}>{ft}</h3>
+    {/* Tab Switcher */}
+    <div style={{display:"flex",gap:6,marginBottom:16,background:"var(--bg)",borderRadius:14,padding:4}}>
+      <button onClick={()=>setTab("basic")} style={tabStyle("basic")}>기본 정보</button>
+      <button onClick={()=>setTab("record")} style={tabStyle("record")}>독서 기록</button>
+    </div>
+    {/* Tab Content */}
+    <div style={{display:"flex",flexDirection:"column",gap:14,maxHeight:"55vh",overflowY:"auto",overflowX:"hidden",paddingRight:4}}>
+      {tab==="basic"?<>
+        <div>{reqLabel("제목")}<SI value={d.title} onChange={e=>setD({...d,title:e.target.value})} placeholder="작품 제목" style={{borderColor:d.title?"var(--border)":"var(--accent)"}}/></div>
+        <AuthorTags authors={d.authors} onChange={a=>setD({...d,authors:a})}/>
+        <CoverEditor value={d.cover} onChange={v=>setD({...d,cover:v})}/>
+        <div>{optLabel("장르")}<div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>{d.genre.map(g=><Bdg key={g} color="var(--accent)" bg="var(--accent-bg)">{g}<X size={11} style={{cursor:"pointer",marginLeft:2}} onClick={()=>setD({...d,genre:d.genre.filter(x=>x!==g)})}/></Bdg>)}</div><SS value="" onChange={e=>{const v=e.target.value;if(v&&!d.genre.includes(v))setD({...d,genre:[...d.genre,v]});e.target.value="";}}><option value="">장르 선택...</option>{genres.filter(g=>!d.genre.includes(g)).map(g=><option key={g} value={g}>{g}</option>)}</SS></div>
+        <div style={{display:"flex",gap:10}}><div style={{flex:1}}>{optLabel("매체")}<SS value={d.format} onChange={e=>setD({...d,format:e.target.value})}>{useFmts.map(o=><option key={o} value={o}>{o}</option>)}</SS></div><div style={{flex:1}}>{optLabel("발행")}<SS value={d.publishType} onChange={e=>setD({...d,publishType:e.target.value})}>{usePubs.map(o=><option key={o} value={o}>{o}</option>)}</SS></div></div>
+        <div>{optLabel("플랫폼")}<SS value={d.platform} onChange={e=>setD({...d,platform:e.target.value})}>{platforms.map(o=><option key={o} value={o}>{o}</option>)}</SS></div>
+        <div style={{display:"flex",gap:10}}><div style={{flex:1}}>{optLabel("출판연도")}<SI type="number" min="0" value={d.year} onChange={e=>nc("year",e.target.value)} placeholder="선택"/></div><div style={{flex:1}}>{optLabel("전체 권수")}<SI type="number" min="0" value={d.volumes} onChange={e=>nc("volumes",e.target.value)} placeholder="선택"/></div></div>
+        <div>{optLabel("완결 여부")}<div style={{display:"flex",gap:8}}><TB label="연재중" active={!d.completed} onClick={()=>setD({...d,completed:false})}/><TB label="완결" active={d.completed} onClick={()=>setD({...d,completed:true})}/></div></div>
+      </>:<>
+        <div>{optLabel("독서 상태")}<SS value={d.status} onChange={e=>setD({...d,status:e.target.value})}>{STATUSES.map(o=><option key={o} value={o}>{o}</option>)}</SS></div>
+        <div>{optLabel("별점")}<Stars rating={d.rating} size={28} interactive onChange={r=>setD({...d,rating:r})}/></div>
+        <div>{optLabel(`읽은 권수${d.volumes?` (전체 ${d.volumes}권 중)`:""}`)} <SI type="number" min="0" value={d.readVolumes} onChange={e=>nc("readVolumes",e.target.value)} placeholder="선택"/></div>
+        <div>{optLabel("읽은 날짜")}<SI type="date" value={d.readDate} onChange={e=>setD({...d,readDate:e.target.value})}/></div>
+        {allShelves.length>0&&<div>{optLabel("서재 분류")}<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{allShelves.map(sh=><TB key={sh.id} label={sh.name} active={d.shelves.includes(sh.name)} onClick={()=>ts(sh.name)} style={{flex:"none",padding:"8px 14px"}}/>)}</div></div>}
+        <div>{optLabel("위시리스트")}<div style={{display:"flex",gap:8}}><TB label="아니오" active={!d.wishlist} onClick={()=>setD({...d,wishlist:false})}/><TB label="예" active={d.wishlist} onClick={()=>setD({...d,wishlist:true})}/></div></div>
+        <div>{optLabel(`메모 (${(d.memo||"").length}/${MEMO_MAX})`)}<ST value={d.memo} maxLength={MEMO_MAX} onChange={e=>setD({...d,memo:e.target.value})} rows={2} placeholder="짧은 메모 (선택)"/></div>
+      </>}
+    </div>
+    {/* Fixed Bottom Buttons */}
+    <div style={{display:"flex",gap:8,marginTop:14,paddingTop:10,borderTop:"1px solid var(--border)"}}><Btn onClick={onCancel} style={{flex:1}}>취소</Btn><Btn primary onClick={ds} style={{flex:1}}><Check size={16}/>저장</Btn></div>
   </div>;
 };
 
